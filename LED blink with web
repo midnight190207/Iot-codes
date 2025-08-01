@@ -1,0 +1,35 @@
+#include <ESP8266WiFi.h>
+
+#define LED D4
+const char* ssid = "your_SSID";
+const char* password = "your_PASSWORD";
+
+WiFiServer server(80);
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(LED, OUTPUT);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.println("Connecting...");
+  }
+  Serial.println("Connected. IP: " + WiFi.localIP().toString());
+  server.begin();
+}
+
+void loop() {
+  WiFiClient client = server.available();
+  if (!client) return;
+
+  String req = client.readStringUntil('\r');
+  client.flush();
+
+  if (req.indexOf("/ledoff") != -1) digitalWrite(LED, LOW);
+  if (req.indexOf("/ledon") != -1) digitalWrite(LED, HIGH);
+
+  client.print("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n");
+  client.print("<html><h1>LED</h1>");
+  client.print("<a href=\"/ledon\"><button>ON</button></a>");
+  client.print("<a href=\"/ledoff\"><button>OFF</button></a></html>");
+}
